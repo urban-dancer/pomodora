@@ -3,6 +3,17 @@ import { PomodoroTimer } from "@/components/pomodoro-timer";
 
 import { signOut } from "./auth/actions";
 
+function formatTaipeiTime(dateString: string) {
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    hour12: false,
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dateString));
+}
+
 export default async function Home() {
   const supabase = await createClient();
   const {
@@ -122,14 +133,7 @@ export default async function Home() {
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-stone-500">
-                    Started{" "}
-                    {new Date(session.started_at).toLocaleString("zh-TW", {
-                      hour12: false,
-                      month: "numeric",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    Started {formatTaipeiTime(session.started_at)}
                   </p>
                 </div>
               ))
