@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 const TIMER_PRESETS = [25, 15, 5] as const;
 const DEBUG_TIMER_PRESET = {
   label: "10 sec",
-  durationMinutes: 1 / 6,
+  seconds: 10,
+  savedDurationMinutes: 1,
 };
 
 type PomodoroTimerProps = {
@@ -95,9 +96,12 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
     );
 
     const completedAt = new Date().toISOString();
+    const storedDurationMinutes = debugModeEnabled
+      ? DEBUG_TIMER_PRESET.savedDurationMinutes
+      : durationMinutes;
     const { error } = await supabase.from("pomodoro_sessions").insert({
       user_id: userId,
-      duration_minutes: durationMinutes,
+      duration_minutes: storedDurationMinutes,
       status,
       started_at: startedAtRef.current,
       completed_at: status === "completed" ? completedAt : null,
@@ -117,7 +121,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
         : "Cancelled session saved.",
     );
     router.refresh();
-  }, [durationMinutes, router, supabase, userId]);
+  }, [debugModeEnabled, durationMinutes, router, supabase, userId]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -160,8 +164,8 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
       const nextValue = !current;
 
       if (nextValue) {
-        setDurationMinutes(DEBUG_TIMER_PRESET.durationMinutes);
-        setSecondsLeft(10);
+        setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
+        setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
         setStatusMessage("Debug mode enabled.");
       } else {
         setDurationMinutes(25);
@@ -218,9 +222,17 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
         {debugModeEnabled ? (
           <button
             type="button"
-            onClick={() => handlePresetChange(DEBUG_TIMER_PRESET.durationMinutes)}
+            onClick={() => {
+              if (isRunning || isSaving) {
+                return;
+              }
+
+              setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
+              setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
+              setStatusMessage("Ready to focus.");
+            }}
             className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              durationMinutes === DEBUG_TIMER_PRESET.durationMinutes
+              debugModeEnabled && secondsLeft <= DEBUG_TIMER_PRESET.seconds
                 ? "bg-orange-500 text-white"
                 : "border border-white/15 text-stone-200"
             }`}
