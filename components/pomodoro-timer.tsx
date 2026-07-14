@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 
 const TIMER_PRESETS = [25, 15, 5] as const;
-const BREAK_PRESETS = [5, 10] as const;
 const DEBUG_TIMER_PRESET = {
   label: "10 sec",
   seconds: 10,
@@ -17,6 +17,7 @@ const DEFAULT_BREAK_MINUTES = 5;
 type TimerMode = "focus" | "break";
 
 type PomodoroTimerProps = {
+  headerRight?: ReactNode;
   userId: string;
 };
 
@@ -27,7 +28,7 @@ function formatTime(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function PomodoroTimer({ userId }: PomodoroTimerProps) {
+export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
@@ -262,182 +263,169 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
     setStatusMessage(timerMode === "focus" ? "Timer reset." : "Break reset.");
   }
 
-  function handleModeChange(nextMode: TimerMode) {
-    if (isRunning || isSaving) {
-      return;
-    }
-
-    setTimerMode(nextMode);
-    if (nextMode === "focus") {
-      if (debugModeEnabled) {
-        setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
-        setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
-      } else {
-        setDurationMinutes(25);
-        setSecondsLeft(25 * 60);
-      }
-      setStatusMessage("Ready to focus.");
-      return;
-    }
-
-    setDurationMinutes(DEFAULT_BREAK_MINUTES);
-    setSecondsLeft(DEFAULT_BREAK_MINUTES * 60);
-    setStatusMessage("Break mode ready.");
-  }
-
   const isFocusMode = timerMode === "focus";
   const glassButtonBase =
     "backdrop-blur-md border shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]";
 
   return (
-    <section
-      className={`my-8 rounded-[1.75rem] px-6 py-8 text-white shadow-lg transition-colors ${
-        isFocusMode
-          ? "bg-[linear-gradient(180deg,_#d95600_0%,_#c84f0c_100%)]"
-          : "bg-[linear-gradient(180deg,_#0d7a77_0%,_#0b6b69_100%)]"
-      }`}
-    >
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => handleModeChange("focus")}
-          className={`rounded-full px-4 py-3 text-sm font-medium transition ${glassButtonBase} ${
-            timerMode === "focus"
-              ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
-              : "border-white/20 bg-white/10 text-stone-100"
-          }`}
-        >
-          Focus mode
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeChange("break")}
-          className={`rounded-full px-4 py-3 text-sm font-medium transition ${glassButtonBase} ${
-            timerMode === "break"
-              ? "border-white/25 bg-[rgba(243,223,138,0.88)] text-[#0d6e6b]"
-              : "border-white/20 bg-white/10 text-stone-100"
-          }`}
-        >
-          Break mode
-        </button>
-      </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        {(timerMode === "focus" ? TIMER_PRESETS : BREAK_PRESETS).map((preset) => (
-          <button
-            key={preset}
-            type="button"
-            onClick={() => handlePresetChange(preset)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
-              durationMinutes === preset
-                ? isFocusMode
-                  ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
-                  : "border-white/25 bg-[rgba(243,223,138,0.88)] text-[#0d6e6b]"
-                : "border-white/20 bg-white/10 text-stone-100"
+    <>
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <details>
+            <summary className="inline-flex cursor-pointer list-none rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-700">
+              Advanced settings
+            </summary>
+
+            <div className="mt-3 grid gap-3 rounded-[1.5rem] border border-orange-100 bg-white/70 px-4 py-4 text-stone-800 shadow-sm backdrop-blur-md">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled((current) => !current)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
+                    soundEnabled
+                      ? "border-emerald-300/40 bg-emerald-50/80 text-emerald-800"
+                      : "border-stone-200 bg-white/80 text-stone-700"
+                  }`}
+                >
+                  {soundEnabled ? "Sound on" : "Sound off"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isRunning || isSaving) {
+                      return;
+                    }
+
+                    setAutoBreakEnabled((current) => !current);
+                  }}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
+                    autoBreakEnabled
+                      ? "border-violet-300/40 bg-violet-50/80 text-violet-800"
+                      : "border-stone-200 bg-white/80 text-stone-700"
+                  }`}
+                >
+                  {autoBreakEnabled ? "Auto break on" : "Auto break off"}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleDebugModeToggle}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
+                    debugModeEnabled
+                      ? "border-sky-300/40 bg-sky-50/80 text-sky-800"
+                      : "border-stone-200 bg-white/80 text-stone-700"
+                  }`}
+                >
+                  {debugModeEnabled ? "Debug on" : "Debug off"}
+                </button>
+
+                {debugModeEnabled ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isRunning || isSaving || timerMode !== "focus") {
+                        return;
+                      }
+
+                      setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
+                      setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
+                      setStatusMessage("Ready to focus.");
+                    }}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
+                      debugModeEnabled && secondsLeft <= DEBUG_TIMER_PRESET.seconds
+                        ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
+                        : "border-stone-200 bg-white/80 text-stone-700"
+                    }`}
+                  >
+                    {DEBUG_TIMER_PRESET.label}
+                  </button>
+                ) : (
+                  <div className="rounded-full border border-stone-200 bg-white/70 px-4 py-2 text-center text-sm text-stone-400">
+                    Debug preset hidden
+                  </div>
+                )}
+              </div>
+            </div>
+          </details>
+
+          {headerRight ?? <div />}
+        </div>
+
+        <div className="space-y-2">
+          <h1 className="text-4xl font-semibold tracking-tight">Focus for 25 minutes.</h1>
+          <p className="text-sm leading-6 text-stone-600">
+            Your Next.js app is running, Supabase auth works, and session
+            storage is now connected.
+          </p>
+        </div>
+      </section>
+
+      <section
+        className={`my-8 rounded-[1.75rem] px-6 py-8 text-white shadow-lg transition-colors ${
+          isFocusMode
+            ? "bg-[linear-gradient(180deg,_#d95600_0%,_#c84f0c_100%)]"
+            : "bg-[linear-gradient(180deg,_#0d7a77_0%,_#0b6b69_100%)]"
+        }`}
+      >
+        <div className="flex flex-wrap justify-center gap-2">
+          {TIMER_PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => handlePresetChange(preset)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
+                durationMinutes === preset
+                  ? isFocusMode
+                    ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
+                    : "border-white/25 bg-[rgba(243,223,138,0.88)] text-[#0d6e6b]"
+                  : "border-white/20 bg-white/10 text-stone-100"
+              }`}
+            >
+              {preset} min
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-8 text-center">
+          <p
+            className={`text-sm uppercase tracking-[0.3em] ${
+              isFocusMode ? "text-[#ffe08a]" : "text-[#f3df8a]"
             }`}
           >
-            {preset} min
-          </button>
-        ))}
-        {debugModeEnabled ? (
+            {timerMode === "focus" ? "Current focus" : "Current break"}
+          </p>
+          <p className="mt-4 text-7xl font-semibold tabular-nums">
+            {formatTime(secondsLeft)}
+          </p>
+          <p className="mt-3 text-sm text-stone-300">{statusMessage}</p>
+        </div>
+
+        <div className="mt-8 grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => {
-              if (isRunning || isSaving || timerMode !== "focus") {
-                return;
-              }
-
-              setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
-              setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
-              setStatusMessage("Ready to focus.");
-            }}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
-              debugModeEnabled && secondsLeft <= DEBUG_TIMER_PRESET.seconds
-                ? isFocusMode
-                  ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
-                  : "border-white/25 bg-[rgba(243,223,138,0.88)] text-[#0d6e6b]"
-                : "border-white/20 bg-white/10 text-stone-100"
+            onClick={handleStart}
+            disabled={isRunning || isSaving}
+            className={`rounded-full px-4 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isFocusMode
+                ? "bg-[#8f2d00] hover:bg-[#782500]"
+                : "bg-[#0a5351] hover:bg-[#084544]"
             }`}
           >
-            {DEBUG_TIMER_PRESET.label}
+            {isRunning ? "Running..." : "Start"}
           </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => setSoundEnabled((current) => !current)}
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
-            soundEnabled
-              ? "border-emerald-200/30 bg-emerald-100/12 text-emerald-50"
-              : "border-white/20 bg-white/10 text-stone-100"
-          }`}
-        >
-          {soundEnabled ? "Sound on" : "Sound off"}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (isRunning || isSaving) {
-              return;
-            }
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={isSaving}
+            className={`rounded-full px-4 py-3 font-medium text-stone-50 transition disabled:cursor-not-allowed disabled:opacity-60 ${glassButtonBase} border-white/20 bg-white/10 hover:bg-white/14`}
+          >
+            Reset
+          </button>
+        </div>
+      </section>
 
-            setAutoBreakEnabled((current) => !current);
-          }}
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
-            autoBreakEnabled
-              ? "border-violet-200/30 bg-violet-100/12 text-violet-50"
-              : "border-white/20 bg-white/10 text-stone-100"
-          }`}
-        >
-          {autoBreakEnabled ? "Auto break on" : "Auto break off"}
-        </button>
-        <button
-          type="button"
-          onClick={handleDebugModeToggle}
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
-            debugModeEnabled
-              ? "border-sky-200/30 bg-sky-100/12 text-sky-50"
-              : "border-white/20 bg-white/10 text-stone-100"
-          }`}
-        >
-          {debugModeEnabled ? "Debug on" : "Debug off"}
-        </button>
-      </div>
-
-      <div className="mt-8 text-center">
-        <p
-          className={`text-sm uppercase tracking-[0.3em] ${
-            isFocusMode ? "text-[#ffe08a]" : "text-[#f3df8a]"
-          }`}
-        >
-          {timerMode === "focus" ? "Current focus" : "Current break"}
-        </p>
-        <p className="mt-4 text-7xl font-semibold tabular-nums">
-          {formatTime(secondsLeft)}
-        </p>
-        <p className="mt-3 text-sm text-stone-300">{statusMessage}</p>
-      </div>
-
-      <div className="mt-8 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={isRunning || isSaving}
-          className={`rounded-full px-4 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
-            isFocusMode
-              ? "bg-[#8f2d00] hover:bg-[#782500]"
-              : "bg-[#0a5351] hover:bg-[#084544]"
-          }`}
-        >
-          {isRunning ? "Running..." : "Start"}
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={isSaving}
-          className={`rounded-full px-4 py-3 font-medium text-stone-50 transition disabled:cursor-not-allowed disabled:opacity-60 ${glassButtonBase} border-white/20 bg-white/10 hover:bg-white/14`}
-        >
-          Reset
-        </button>
-      </div>
-    </section>
+    </>
   );
 }

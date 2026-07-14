@@ -109,56 +109,55 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fff7ed,_#ffedd5_35%,_#fff_70%)] px-6 py-10 text-stone-900">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md flex-col justify-between rounded-[2rem] border border-orange-100 bg-white/90 p-6 shadow-[0_20px_80px_rgba(251,146,60,0.15)] backdrop-blur">
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-700">
-              Pomodora setup check
-            </div>
-            {user ? (
+        {user ? (
+          <PomodoroTimer
+            userId={user.id}
+            headerRight={
               <form action={signOut}>
                 <button className="rounded-full border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50">
                   Sign out
                 </button>
               </form>
-            ) : null}
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-4xl font-semibold tracking-tight">Focus for 25 minutes.</h1>
-            <p className="text-sm leading-6 text-stone-600">
-              Your Next.js app is running, Supabase auth works, and session
-              storage is now connected.
-            </p>
-          </div>
-        </section>
-
-        {user ? (
-          <PomodoroTimer userId={user.id} />
+            }
+          />
         ) : (
-          <section className="my-8 rounded-[1.75rem] bg-stone-950 px-6 py-8 text-white shadow-lg">
-            <div className="text-center">
-              <p className="text-sm uppercase tracking-[0.3em] text-orange-300">
-                Current timer
-              </p>
-              <p className="mt-4 text-7xl font-semibold tabular-nums">25:00</p>
-              <p className="mt-3 text-sm text-stone-300">
-                Sign in to save your focus sessions.
-              </p>
-            </div>
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              <a
-                href="/auth"
-                className="rounded-full bg-orange-500 px-4 py-3 text-center font-medium text-white"
-              >
-                Sign up
-              </a>
-              <a
-                href="/auth"
-                className="rounded-full border border-white/15 px-4 py-3 text-center font-medium text-stone-100"
-              >
-                Sign in
-              </a>
-            </div>
-          </section>
+          <>
+            <section className="space-y-4">
+              <div className="space-y-2">
+                <h1 className="text-4xl font-semibold tracking-tight">Focus for 25 minutes.</h1>
+                <p className="text-sm leading-6 text-stone-600">
+                  Your Next.js app is running, Supabase auth works, and session
+                  storage is now connected.
+                </p>
+              </div>
+            </section>
+
+            <section className="my-8 rounded-[1.75rem] bg-stone-950 px-6 py-8 text-white shadow-lg">
+              <div className="text-center">
+                <p className="text-sm uppercase tracking-[0.3em] text-orange-300">
+                  Current timer
+                </p>
+                <p className="mt-4 text-7xl font-semibold tabular-nums">25:00</p>
+                <p className="mt-3 text-sm text-stone-300">
+                  Sign in to save your focus sessions.
+                </p>
+              </div>
+              <div className="mt-8 grid grid-cols-2 gap-3">
+                <a
+                  href="/auth"
+                  className="rounded-full bg-orange-500 px-4 py-3 text-center font-medium text-white"
+                >
+                  Sign up
+                </a>
+                <a
+                  href="/auth"
+                  className="rounded-full border border-white/15 px-4 py-3 text-center font-medium text-stone-100"
+                >
+                  Sign in
+                </a>
+              </div>
+            </section>
+          </>
         )}
 
         <section className="space-y-3 text-sm text-stone-600">
