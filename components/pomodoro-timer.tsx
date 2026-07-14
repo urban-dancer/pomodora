@@ -263,6 +263,30 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
     setStatusMessage(timerMode === "focus" ? "Timer reset." : "Break reset.");
   }
 
+  function handleModeSwitch() {
+    if (isRunning || isSaving) {
+      return;
+    }
+
+    if (timerMode === "focus") {
+      setTimerMode("break");
+      setDurationMinutes(DEFAULT_BREAK_MINUTES);
+      setSecondsLeft(DEFAULT_BREAK_MINUTES * 60);
+      setStatusMessage("Break mode ready.");
+      return;
+    }
+
+    setTimerMode("focus");
+    if (debugModeEnabled) {
+      setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
+      setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
+    } else {
+      setDurationMinutes(25);
+      setSecondsLeft(25 * 60);
+    }
+    setStatusMessage("Ready to focus.");
+  }
+
   const isFocusMode = timerMode === "focus";
   const glassButtonBase =
     "backdrop-blur-md border shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]";
@@ -354,11 +378,7 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-4xl font-semibold tracking-tight">Focus for 25 minutes.</h1>
-          <p className="text-sm leading-6 text-stone-600">
-            Your Next.js app is running, Supabase auth works, and session
-            storage is now connected.
-          </p>
+          <h1 className="text-4xl font-semibold tracking-tight">Pomodora</h1>
         </div>
       </section>
 
@@ -396,11 +416,34 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
           >
             {timerMode === "focus" ? "Current focus" : "Current break"}
           </p>
-          <p className="mt-4 text-7xl font-semibold tabular-nums">
-            {formatTime(secondsLeft)}
-          </p>
-          <p className="mt-3 text-sm text-stone-300">{statusMessage}</p>
+        <p className="mt-4 text-7xl font-semibold tabular-nums">
+          {formatTime(secondsLeft)}
+        </p>
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={handleModeSwitch}
+            disabled={isRunning || isSaving}
+            aria-label={
+              timerMode === "focus" ? "Switch to break mode" : "Switch to focus mode"
+            }
+            className={`relative h-9 w-18 rounded-full border-[3px] bg-white/95 transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isFocusMode ? "border-[#8f2d00]" : "border-[#0a5351]"
+            }`}
+          >
+            <span
+              className={`absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full shadow-sm transition-all ${
+                isFocusMode
+                  ? "left-1 bg-[linear-gradient(180deg,_#9f3300_0%,_#782500_100%)]"
+                  : "left-[calc(100%-1.75rem)] bg-[linear-gradient(180deg,_#0b5d5b_0%,_#084544_100%)]"
+              }`}
+            />
+          </button>
         </div>
+        <p className="sr-only" aria-live="polite">
+          {statusMessage}
+        </p>
+      </div>
 
         <div className="mt-8 grid grid-cols-2 gap-3">
           <button
