@@ -293,7 +293,7 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
 
   return (
     <>
-      <section className="space-y-4">
+      <section className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between gap-3">
           <details>
             <summary className="inline-flex cursor-pointer list-none rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-700">
@@ -378,12 +378,12 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-4xl font-semibold tracking-tight">Pomodora</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Pomodora</h1>
         </div>
       </section>
 
       <section
-        className={`my-8 rounded-[1.75rem] px-6 py-8 text-white shadow-lg transition-colors ${
+        className={`my-6 rounded-[1.5rem] px-4 py-6 text-white shadow-lg transition-colors sm:my-8 sm:rounded-[1.75rem] sm:px-6 sm:py-8 ${
           isFocusMode
             ? "bg-[linear-gradient(180deg,_#d95600_0%,_#c84f0c_100%)]"
             : "bg-[linear-gradient(180deg,_#0d7a77_0%,_#0b6b69_100%)]"
@@ -416,36 +416,36 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
           >
             {timerMode === "focus" ? "Current focus" : "Current break"}
           </p>
-        <p className="mt-4 text-7xl font-semibold tabular-nums">
-          {formatTime(secondsLeft)}
-        </p>
-        <div className="mt-4 flex justify-center">
-          <button
-            type="button"
-            onClick={handleModeSwitch}
-            disabled={isRunning || isSaving}
-            aria-label={
-              timerMode === "focus" ? "Switch to break mode" : "Switch to focus mode"
-            }
-            className={`relative h-9 w-18 rounded-full border-[3px] bg-white/95 transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isFocusMode ? "border-[#8f2d00]" : "border-[#0a5351]"
-            }`}
-          >
-            <span
-              className={`absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full shadow-sm transition-all ${
-                isFocusMode
-                  ? "left-1 bg-[linear-gradient(180deg,_#9f3300_0%,_#782500_100%)]"
-                  : "left-[calc(100%-1.75rem)] bg-[linear-gradient(180deg,_#0b5d5b_0%,_#084544_100%)]"
+          <p className="mt-4 text-6xl font-semibold tabular-nums sm:text-7xl">
+            {formatTime(secondsLeft)}
+          </p>
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={handleModeSwitch}
+              disabled={isRunning || isSaving}
+              aria-label={
+                timerMode === "focus" ? "Switch to break mode" : "Switch to focus mode"
+              }
+              className={`relative h-8 w-14 rounded-full border-[3px] bg-white/95 transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isFocusMode ? "border-[#8f2d00]" : "border-[#0a5351]"
               }`}
-            />
-          </button>
+            >
+              <span
+                className={`absolute top-1/2 h-4.5 w-4.5 -translate-y-1/2 rounded-full shadow-sm transition-all ${
+                  isFocusMode
+                    ? "left-1 bg-[linear-gradient(180deg,_#9f3300_0%,_#782500_100%)]"
+                    : "left-[calc(100%-1.25rem)] bg-[linear-gradient(180deg,_#0b5d5b_0%,_#084544_100%)]"
+                }`}
+              />
+            </button>
+          </div>
+          <p className="sr-only" aria-live="polite">
+            {statusMessage}
+          </p>
         </div>
-        <p className="sr-only" aria-live="polite">
-          {statusMessage}
-        </p>
-      </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8">
           <button
             type="button"
             onClick={handleStart}
