@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: new URL("https://pomodora-six.vercel.app"),
   title: "Pomodora",
   description: "A mobile-friendly pomodoro timer built with Next.js and Supabase.",
   applicationName: "Pomodora",
