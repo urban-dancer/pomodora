@@ -389,7 +389,7 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
             : "bg-[linear-gradient(180deg,_#0d7a77_0%,_#0b6b69_100%)]"
         }`}
       >
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
           {TIMER_PRESETS.map((preset) => (
             <button
               key={preset}
@@ -408,18 +408,18 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
           ))}
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-7 text-center sm:mt-8">
           <p
-            className={`text-sm uppercase tracking-[0.3em] ${
+            className={`text-xs uppercase tracking-[0.32em] sm:text-sm ${
               isFocusMode ? "text-[#ffe08a]" : "text-[#f3df8a]"
             }`}
           >
             {timerMode === "focus" ? "Current focus" : "Current break"}
           </p>
-          <p className="mt-4 text-6xl font-semibold tabular-nums sm:text-7xl">
+          <p className="mt-3 text-6xl font-semibold leading-none tabular-nums sm:mt-4 sm:text-7xl">
             {formatTime(secondsLeft)}
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-5 flex justify-center">
             <button
               type="button"
               onClick={handleModeSwitch}
@@ -445,7 +445,7 @@ export function PomodoroTimer({ userId, headerRight }: PomodoroTimerProps) {
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8">
+        <div className="mt-7 grid grid-cols-2 gap-3 sm:mt-8">
           <button
             type="button"
             onClick={handleStart}

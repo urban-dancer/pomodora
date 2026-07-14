@@ -171,12 +171,6 @@ export default async function Home() {
               {user?.email ?? "Not signed in yet"}
             </span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3">
-            <span>Next step</span>
-            <span className="max-w-[13rem] text-right font-medium text-stone-900">
-              {user ? "Add reminder sound" : "Create account or sign in"}
-            </span>
-          </div>
         </section>
 
         {user ? (
