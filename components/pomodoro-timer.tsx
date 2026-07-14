@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 
-const TIMER_PRESETS = [25, 15, 5];
+const TIMER_PRESETS = [25, 15, 5] as const;
+const DEBUG_TIMER_PRESET = {
+  label: "10 sec",
+  durationMinutes: 1 / 6,
+};
 
 type PomodoroTimerProps = {
   userId: string;
@@ -27,6 +31,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [debugModeEnabled, setDebugModeEnabled] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Ready to focus.");
 
   const startedAtRef = useRef<string | null>(null);
@@ -146,6 +151,28 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
     setStatusMessage("Ready to focus.");
   }
 
+  function handleDebugModeToggle() {
+    if (isRunning || isSaving) {
+      return;
+    }
+
+    setDebugModeEnabled((current) => {
+      const nextValue = !current;
+
+      if (nextValue) {
+        setDurationMinutes(DEBUG_TIMER_PRESET.durationMinutes);
+        setSecondsLeft(10);
+        setStatusMessage("Debug mode enabled.");
+      } else {
+        setDurationMinutes(25);
+        setSecondsLeft(25 * 60);
+        setStatusMessage("Debug mode disabled.");
+      }
+
+      return nextValue;
+    });
+  }
+
   function handleStart() {
     if (isRunning || isSaving) {
       return;
@@ -188,6 +215,19 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
             {preset} min
           </button>
         ))}
+        {debugModeEnabled ? (
+          <button
+            type="button"
+            onClick={() => handlePresetChange(DEBUG_TIMER_PRESET.durationMinutes)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              durationMinutes === DEBUG_TIMER_PRESET.durationMinutes
+                ? "bg-orange-500 text-white"
+                : "border border-white/15 text-stone-200"
+            }`}
+          >
+            {DEBUG_TIMER_PRESET.label}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => setSoundEnabled((current) => !current)}
@@ -198,6 +238,17 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
           }`}
         >
           {soundEnabled ? "Sound on" : "Sound off"}
+        </button>
+        <button
+          type="button"
+          onClick={handleDebugModeToggle}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            debugModeEnabled
+              ? "border border-sky-400/30 bg-sky-500/10 text-sky-300"
+              : "border border-white/15 text-stone-300"
+          }`}
+        >
+          {debugModeEnabled ? "Debug on" : "Debug off"}
         </button>
       </div>
 
