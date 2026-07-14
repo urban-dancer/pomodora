@@ -45,6 +45,11 @@ function getLastSevenTaipeiDates() {
   return dates;
 }
 
+const sectionTitleClass =
+  "text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-500";
+const softCardClass =
+  "rounded-[1.25rem] border border-white/70 bg-white/78 px-4 py-4 shadow-[0_10px_30px_rgba(120,53,15,0.06)] backdrop-blur-sm sm:rounded-[1.5rem]";
+
 export default async function Home() {
   const supabase = await createClient();
   const {
@@ -161,12 +166,12 @@ export default async function Home() {
         )}
 
         <section className="space-y-2.5 text-sm text-stone-600 sm:space-y-3">
-          <div className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3">
-            <span>Supabase status</span>
+          <div className={`${softCardClass} flex items-center justify-between`}>
+            <span className="text-stone-600">Supabase status</span>
             <span className="font-medium text-emerald-600">Connected</span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3">
-            <span>Signed in user</span>
+          <div className={`${softCardClass} flex items-center justify-between`}>
+            <span className="text-stone-600">Signed in user</span>
             <span className="max-w-[13rem] truncate font-medium text-stone-900">
               {user?.email ?? "Not signed in yet"}
             </span>
@@ -175,20 +180,20 @@ export default async function Home() {
 
         {user ? (
           <section className="mt-5 grid grid-cols-2 gap-3 sm:mt-6">
-            <div className="rounded-[1.25rem] border border-orange-100 bg-white px-4 py-4 shadow-sm sm:rounded-[1.5rem]">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-stone-500">
+            <div className={softCardClass}>
+              <p className={sectionTitleClass}>
                 Today
               </p>
-              <p className="mt-3 text-4xl font-semibold text-stone-900">
+              <p className="mt-3 text-4xl font-semibold leading-none text-stone-900">
                 {todayCompletedCount}
               </p>
               <p className="mt-2 text-sm text-stone-500">completed sessions</p>
             </div>
-            <div className="rounded-[1.25rem] border border-orange-100 bg-white px-4 py-4 shadow-sm sm:rounded-[1.5rem]">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-stone-500">
+            <div className={softCardClass}>
+              <p className={sectionTitleClass}>
                 Focus time
               </p>
-              <p className="mt-3 text-4xl font-semibold text-stone-900">
+              <p className="mt-3 text-4xl font-semibold leading-none text-stone-900">
                 {todayFocusMinutes}
               </p>
               <p className="mt-2 text-sm text-stone-500">minutes today</p>
@@ -199,7 +204,7 @@ export default async function Home() {
         {user ? (
           <section className="mt-5 space-y-2.5 sm:mt-6 sm:space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-stone-500">
+              <h2 className={sectionTitleClass}>
                 Last 7 days
               </h2>
               <span className="text-xs text-stone-400">Taipei time</span>
@@ -209,7 +214,7 @@ export default async function Home() {
               {weeklySummary.map((day) => (
                 <div
                   key={day.dateKey}
-                  className="rounded-2xl border border-stone-100 bg-white px-4 py-3 shadow-sm"
+                  className={softCardClass}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-medium text-stone-900">{day.label}</span>
@@ -229,7 +234,7 @@ export default async function Home() {
         {user ? (
           <section className="mt-5 space-y-2.5 sm:mt-6 sm:space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-stone-500">
+              <h2 className={sectionTitleClass}>
                 Recent sessions
               </h2>
               <span className="text-xs text-stone-400">Latest 5</span>
@@ -239,7 +244,7 @@ export default async function Home() {
               recentSessions.map((session) => (
                 <div
                   key={session.id}
-                  className="rounded-2xl border border-stone-100 bg-white px-4 py-3 shadow-sm"
+                  className={softCardClass}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-medium text-stone-900">
@@ -261,14 +266,14 @@ export default async function Home() {
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl bg-stone-50 px-4 py-4 text-sm text-stone-500">
+              <div className={`${softCardClass} text-sm text-stone-500`}>
                 No sessions yet. Run your first timer to create one.
               </div>
             )}
           </section>
         ) : null}
 
-        <section className="mt-5 rounded-[1.25rem] border border-orange-100 bg-orange-50/70 px-4 py-4 text-sm text-stone-700 sm:mt-6 sm:rounded-[1.5rem]">
+        <section className="mt-5 rounded-[1.25rem] border border-orange-100/70 bg-[rgba(255,247,237,0.85)] px-4 py-4 text-sm text-stone-700 shadow-[0_10px_30px_rgba(120,53,15,0.05)] backdrop-blur-sm sm:mt-6 sm:rounded-[1.5rem]">
           <h2 className="font-semibold text-stone-900">Add to iPhone Home Screen</h2>
           <ol className="mt-3 space-y-2 leading-6">
             <li>1. Open your deployed site in Safari.</li>
