@@ -26,9 +26,58 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [statusMessage, setStatusMessage] = useState("Ready to focus.");
 
   const startedAtRef = useRef<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const playCompletionSound = useCallback(() => {
+    if (!soundEnabled || typeof window === "undefined") {
+      return;
+    }
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & {
+        webkitAudioContext?: typeof AudioContext;
+      }).webkitAudioContext;
+
+    if (!AudioContextClass) {
+      return;
+    }
+
+    const context = audioContextRef.current ?? new AudioContextClass();
+    audioContextRef.current = context;
+
+    const startAt = context.currentTime;
+    const tones = [
+      { frequency: 880, duration: 0.12, delay: 0 },
+      { frequency: 1174.66, duration: 0.16, delay: 0.14 },
+      { frequency: 1567.98, duration: 0.22, delay: 0.34 },
+    ];
+
+    tones.forEach(({ frequency, duration, delay }) => {
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+
+      gainNode.gain.setValueAtTime(0.0001, startAt + delay);
+      gainNode.gain.exponentialRampToValueAtTime(0.18, startAt + delay + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.0001,
+        startAt + delay + duration,
+      );
+
+      oscillator.connect(gainNode);
+      gainNode.connect(context.destination);
+
+      oscillator.start(startAt + delay);
+      oscillator.stop(startAt + delay + duration);
+    });
+  }, [soundEnabled]);
 
   const saveSession = useCallback(async (status: "completed" | "cancelled") => {
     if (!startedAtRef.current) {
@@ -75,6 +124,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
         if (currentSeconds <= 1) {
           window.clearInterval(intervalId);
           setIsRunning(false);
+          playCompletionSound();
           void saveSession("completed");
           return 0;
         }
@@ -84,7 +134,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [isRunning, saveSession]);
+  }, [isRunning, playCompletionSound, saveSession]);
 
   function handlePresetChange(nextMinutes: number) {
     if (isRunning || isSaving) {
@@ -138,6 +188,17 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
             {preset} min
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setSoundEnabled((current) => !current)}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            soundEnabled
+              ? "border border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
+              : "border border-white/15 text-stone-300"
+          }`}
+        >
+          {soundEnabled ? "Sound on" : "Sound off"}
+        </button>
       </div>
 
       <div className="mt-8 text-center">
