@@ -14,20 +14,97 @@ function formatTaipeiTime(dateString: string) {
   }).format(new Date(dateString));
 }
 
+function getTaipeiDateString(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function formatTaipeiDay(dateString: string) {
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date(dateString));
+}
+
+function getLastSevenTaipeiDates() {
+  const dates: string[] = [];
+  const now = new Date();
+
+  for (let index = 0; index < 7; index += 1) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - index);
+    dates.push(getTaipeiDateString(date));
+  }
+
+  return dates;
+}
+
 export default async function Home() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const todayTaipei = getTaipeiDateString();
+  const lastSevenDates = getLastSevenTaipeiDates();
   const { data: sessions } = user
     ? await supabase
         .from("pomodoro_sessions")
         .select("id, duration_minutes, status, started_at, completed_at, created_at")
         .order("created_at", { ascending: false })
-        .limit(5)
+        .limit(100)
     : { data: [] };
 
-  const recentSessions = sessions ?? [];
+  const allSessions = sessions ?? [];
+  const recentSessions = allSessions.slice(0, 5);
+  const completedSessions = allSessions.filter(
+    (session) => session.status === "completed",
+  );
+  const todayCompletedSessions = completedSessions.filter(
+    (session) =>
+      getTaipeiDateString(new Date(session.started_at)) === todayTaipei,
+  );
+  const todayCompletedCount = todayCompletedSessions.length;
+  const todayFocusMinutes = todayCompletedSessions.reduce(
+    (total, session) => total + session.duration_minutes,
+    0,
+  );
+  const sessionsByDate = completedSessions.reduce<
+    Record<string, { count: number; minutes: number; sampleStartedAt: string }>
+  >((accumulator, session) => {
+    const dateKey = getTaipeiDateString(new Date(session.started_at));
+    const currentValue = accumulator[dateKey];
+
+    if (currentValue) {
+      currentValue.count += 1;
+      currentValue.minutes += session.duration_minutes;
+      return accumulator;
+    }
+
+    accumulator[dateKey] = {
+      count: 1,
+      minutes: session.duration_minutes,
+      sampleStartedAt: session.started_at,
+    };
+    return accumulator;
+  }, {});
+  const weeklySummary = lastSevenDates.map((dateKey) => {
+    const daily = sessionsByDate[dateKey];
+
+    return {
+      dateKey,
+      label: daily
+        ? formatTaipeiDay(daily.sampleStartedAt)
+        : formatTaipeiDay(`${dateKey}T00:00:00+08:00`),
+      count: daily?.count ?? 0,
+      minutes: daily?.minutes ?? 0,
+    };
+  });
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fff7ed,_#ffedd5_35%,_#fff_70%)] px-6 py-10 text-stone-900">
@@ -98,10 +175,63 @@ export default async function Home() {
           <div className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3">
             <span>Next step</span>
             <span className="max-w-[13rem] text-right font-medium text-stone-900">
-              {user ? "Add PWA and mobile polish" : "Create account or sign in"}
+              {user ? "Add reminder sound" : "Create account or sign in"}
             </span>
           </div>
         </section>
+
+        {user ? (
+          <section className="mt-6 grid grid-cols-2 gap-3">
+            <div className="rounded-[1.5rem] border border-orange-100 bg-white px-4 py-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-stone-500">
+                Today
+              </p>
+              <p className="mt-3 text-4xl font-semibold text-stone-900">
+                {todayCompletedCount}
+              </p>
+              <p className="mt-2 text-sm text-stone-500">completed sessions</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-orange-100 bg-white px-4 py-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-stone-500">
+                Focus time
+              </p>
+              <p className="mt-3 text-4xl font-semibold text-stone-900">
+                {todayFocusMinutes}
+              </p>
+              <p className="mt-2 text-sm text-stone-500">minutes today</p>
+            </div>
+          </section>
+        ) : null}
+
+        {user ? (
+          <section className="mt-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-stone-500">
+                Last 7 days
+              </h2>
+              <span className="text-xs text-stone-400">Taipei time</span>
+            </div>
+
+            <div className="space-y-2">
+              {weeklySummary.map((day) => (
+                <div
+                  key={day.dateKey}
+                  className="rounded-2xl border border-stone-100 bg-white px-4 py-3 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-medium text-stone-900">{day.label}</span>
+                    <span className="text-sm font-medium text-stone-500">
+                      {day.minutes} min
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-stone-500">
+                    {day.count} completed session{day.count === 1 ? "" : "s"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {user ? (
           <section className="mt-6 space-y-3">
