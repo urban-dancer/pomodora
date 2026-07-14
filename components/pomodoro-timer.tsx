@@ -285,16 +285,26 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
     setStatusMessage("Break mode ready.");
   }
 
+  const isFocusMode = timerMode === "focus";
+  const glassButtonBase =
+    "backdrop-blur-md border shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]";
+
   return (
-    <section className="my-8 rounded-[1.75rem] bg-stone-950 px-6 py-8 text-white shadow-lg">
+    <section
+      className={`my-8 rounded-[1.75rem] px-6 py-8 text-white shadow-lg transition-colors ${
+        isFocusMode
+          ? "bg-[linear-gradient(180deg,_#d95600_0%,_#c84f0c_100%)]"
+          : "bg-[linear-gradient(180deg,_#0d7a77_0%,_#0b6b69_100%)]"
+      }`}
+    >
       <div className="mb-4 grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => handleModeChange("focus")}
-          className={`rounded-full px-4 py-3 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-3 text-sm font-medium transition ${glassButtonBase} ${
             timerMode === "focus"
-              ? "bg-white text-stone-950"
-              : "border border-white/15 text-stone-200"
+              ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
+              : "border-white/20 bg-white/10 text-stone-100"
           }`}
         >
           Focus mode
@@ -302,10 +312,10 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
         <button
           type="button"
           onClick={() => handleModeChange("break")}
-          className={`rounded-full px-4 py-3 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-3 text-sm font-medium transition ${glassButtonBase} ${
             timerMode === "break"
-              ? "bg-sky-400 text-stone-950"
-              : "border border-white/15 text-stone-200"
+              ? "border-white/25 bg-[rgba(243,223,138,0.88)] text-[#0d6e6b]"
+              : "border-white/20 bg-white/10 text-stone-100"
           }`}
         >
           Break mode
@@ -317,10 +327,12 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
             key={preset}
             type="button"
             onClick={() => handlePresetChange(preset)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
               durationMinutes === preset
-                ? "bg-orange-500 text-white"
-                : "border border-white/15 text-stone-200"
+                ? isFocusMode
+                  ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
+                  : "border-white/25 bg-[rgba(243,223,138,0.88)] text-[#0d6e6b]"
+                : "border-white/20 bg-white/10 text-stone-100"
             }`}
           >
             {preset} min
@@ -338,10 +350,12 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
               setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
               setStatusMessage("Ready to focus.");
             }}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
               debugModeEnabled && secondsLeft <= DEBUG_TIMER_PRESET.seconds
-                ? "bg-orange-500 text-white"
-                : "border border-white/15 text-stone-200"
+                ? isFocusMode
+                  ? "border-white/25 bg-[rgba(255,232,191,0.88)] text-[#8a2f00]"
+                  : "border-white/25 bg-[rgba(243,223,138,0.88)] text-[#0d6e6b]"
+                : "border-white/20 bg-white/10 text-stone-100"
             }`}
           >
             {DEBUG_TIMER_PRESET.label}
@@ -350,10 +364,10 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
         <button
           type="button"
           onClick={() => setSoundEnabled((current) => !current)}
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
             soundEnabled
-              ? "border border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
-              : "border border-white/15 text-stone-300"
+              ? "border-emerald-200/30 bg-emerald-100/12 text-emerald-50"
+              : "border-white/20 bg-white/10 text-stone-100"
           }`}
         >
           {soundEnabled ? "Sound on" : "Sound off"}
@@ -367,10 +381,10 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
 
             setAutoBreakEnabled((current) => !current);
           }}
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
             autoBreakEnabled
-              ? "border border-violet-400/30 bg-violet-500/10 text-violet-300"
-              : "border border-white/15 text-stone-300"
+              ? "border-violet-200/30 bg-violet-100/12 text-violet-50"
+              : "border-white/20 bg-white/10 text-stone-100"
           }`}
         >
           {autoBreakEnabled ? "Auto break on" : "Auto break off"}
@@ -378,10 +392,10 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
         <button
           type="button"
           onClick={handleDebugModeToggle}
-          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${glassButtonBase} ${
             debugModeEnabled
-              ? "border border-sky-400/30 bg-sky-500/10 text-sky-300"
-              : "border border-white/15 text-stone-300"
+              ? "border-sky-200/30 bg-sky-100/12 text-sky-50"
+              : "border-white/20 bg-white/10 text-stone-100"
           }`}
         >
           {debugModeEnabled ? "Debug on" : "Debug off"}
@@ -389,7 +403,11 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
       </div>
 
       <div className="mt-8 text-center">
-        <p className="text-sm uppercase tracking-[0.3em] text-orange-300">
+        <p
+          className={`text-sm uppercase tracking-[0.3em] ${
+            isFocusMode ? "text-[#ffe08a]" : "text-[#f3df8a]"
+          }`}
+        >
           {timerMode === "focus" ? "Current focus" : "Current break"}
         </p>
         <p className="mt-4 text-7xl font-semibold tabular-nums">
@@ -403,7 +421,11 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
           type="button"
           onClick={handleStart}
           disabled={isRunning || isSaving}
-          className="rounded-full bg-orange-500 px-4 py-3 font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`rounded-full px-4 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            isFocusMode
+              ? "bg-[#8f2d00] hover:bg-[#782500]"
+              : "bg-[#0a5351] hover:bg-[#084544]"
+          }`}
         >
           {isRunning ? "Running..." : "Start"}
         </button>
@@ -411,7 +433,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
           type="button"
           onClick={handleReset}
           disabled={isSaving}
-          className="rounded-full border border-white/15 px-4 py-3 font-medium text-stone-100 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`rounded-full px-4 py-3 font-medium text-stone-50 transition disabled:cursor-not-allowed disabled:opacity-60 ${glassButtonBase} border-white/20 bg-white/10 hover:bg-white/14`}
         >
           Reset
         </button>
