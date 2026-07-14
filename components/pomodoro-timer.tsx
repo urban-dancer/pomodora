@@ -6,11 +6,15 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const TIMER_PRESETS = [25, 15, 5] as const;
+const BREAK_PRESETS = [5, 10] as const;
 const DEBUG_TIMER_PRESET = {
   label: "10 sec",
   seconds: 10,
   savedDurationMinutes: 1,
 };
+const DEFAULT_BREAK_MINUTES = 5;
+
+type TimerMode = "focus" | "break";
 
 type PomodoroTimerProps = {
   userId: string;
@@ -27,11 +31,13 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
+  const [timerMode, setTimerMode] = useState<TimerMode>("focus");
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [autoBreakEnabled, setAutoBreakEnabled] = useState(true);
   const [debugModeEnabled, setDebugModeEnabled] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Ready to focus.");
 
@@ -85,6 +91,18 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
     });
   }, [soundEnabled]);
 
+  const applyTimerLength = useCallback(
+    (nextMinutes: number) => {
+      setDurationMinutes(nextMinutes);
+      setSecondsLeft(
+        debugModeEnabled && timerMode === "focus"
+          ? DEBUG_TIMER_PRESET.seconds
+          : nextMinutes * 60,
+      );
+    },
+    [debugModeEnabled, timerMode],
+  );
+
   const saveSession = useCallback(async (status: "completed" | "cancelled") => {
     if (!startedAtRef.current) {
       return;
@@ -115,13 +133,48 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
       return;
     }
 
-    setStatusMessage(
-      status === "completed"
-        ? "Session saved. Nice work."
-        : "Cancelled session saved.",
-    );
+    if (status === "completed" && autoBreakEnabled) {
+      setTimerMode("break");
+      setDurationMinutes(DEFAULT_BREAK_MINUTES);
+      setSecondsLeft(DEFAULT_BREAK_MINUTES * 60);
+      setStatusMessage("Focus session saved. Break mode is ready.");
+    } else if (status === "completed") {
+      if (debugModeEnabled) {
+        setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
+        setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
+      } else {
+        setDurationMinutes(durationMinutes);
+        setSecondsLeft(durationMinutes * 60);
+      }
+      setStatusMessage("Focus session saved.");
+    } else {
+      setStatusMessage("Cancelled session saved.");
+    }
     router.refresh();
-  }, [debugModeEnabled, durationMinutes, router, supabase, userId]);
+  }, [autoBreakEnabled, debugModeEnabled, durationMinutes, router, supabase, userId]);
+
+  const handleTimerFinished = useCallback(() => {
+    setIsRunning(false);
+    playCompletionSound();
+
+    if (timerMode === "focus") {
+      void saveSession("completed");
+      return;
+    }
+
+    startedAtRef.current = null;
+    setTimerMode("focus");
+
+    if (debugModeEnabled) {
+      setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
+      setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
+    } else {
+      setDurationMinutes(25);
+      setSecondsLeft(25 * 60);
+    }
+
+    setStatusMessage("Break finished. Focus mode is ready.");
+  }, [debugModeEnabled, playCompletionSound, saveSession, timerMode]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -132,9 +185,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
       setSecondsLeft((currentSeconds) => {
         if (currentSeconds <= 1) {
           window.clearInterval(intervalId);
-          setIsRunning(false);
-          playCompletionSound();
-          void saveSession("completed");
+          handleTimerFinished();
           return 0;
         }
 
@@ -143,16 +194,17 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [isRunning, playCompletionSound, saveSession]);
+  }, [handleTimerFinished, isRunning]);
 
   function handlePresetChange(nextMinutes: number) {
     if (isRunning || isSaving) {
       return;
     }
 
-    setDurationMinutes(nextMinutes);
-    setSecondsLeft(nextMinutes * 60);
-    setStatusMessage("Ready to focus.");
+    applyTimerLength(nextMinutes);
+    setStatusMessage(
+      timerMode === "focus" ? "Ready to focus." : "Break timer updated.",
+    );
   }
 
   function handleDebugModeToggle() {
@@ -164,10 +216,12 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
       const nextValue = !current;
 
       if (nextValue) {
+        setTimerMode("focus");
         setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
         setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
         setStatusMessage("Debug mode enabled.");
       } else {
+        setTimerMode("focus");
         setDurationMinutes(25);
         setSecondsLeft(25 * 60);
         setStatusMessage("Debug mode disabled.");
@@ -184,28 +238,81 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
 
     startedAtRef.current = new Date().toISOString();
     setIsRunning(true);
-    setStatusMessage("Focus mode started.");
+    setStatusMessage(
+      timerMode === "focus" ? "Focus mode started." : "Break mode started.",
+    );
   }
 
   function handleReset() {
     const wasRunning = isRunning;
 
     setIsRunning(false);
-    setSecondsLeft(durationMinutes * 60);
+    setSecondsLeft(
+      debugModeEnabled && timerMode === "focus"
+        ? DEBUG_TIMER_PRESET.seconds
+        : durationMinutes * 60,
+    );
 
-    if (wasRunning) {
+    if (wasRunning && timerMode === "focus") {
       void saveSession("cancelled");
       return;
     }
 
     startedAtRef.current = null;
-    setStatusMessage("Timer reset.");
+    setStatusMessage(timerMode === "focus" ? "Timer reset." : "Break reset.");
+  }
+
+  function handleModeChange(nextMode: TimerMode) {
+    if (isRunning || isSaving) {
+      return;
+    }
+
+    setTimerMode(nextMode);
+    if (nextMode === "focus") {
+      if (debugModeEnabled) {
+        setDurationMinutes(DEBUG_TIMER_PRESET.savedDurationMinutes);
+        setSecondsLeft(DEBUG_TIMER_PRESET.seconds);
+      } else {
+        setDurationMinutes(25);
+        setSecondsLeft(25 * 60);
+      }
+      setStatusMessage("Ready to focus.");
+      return;
+    }
+
+    setDurationMinutes(DEFAULT_BREAK_MINUTES);
+    setSecondsLeft(DEFAULT_BREAK_MINUTES * 60);
+    setStatusMessage("Break mode ready.");
   }
 
   return (
     <section className="my-8 rounded-[1.75rem] bg-stone-950 px-6 py-8 text-white shadow-lg">
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => handleModeChange("focus")}
+          className={`rounded-full px-4 py-3 text-sm font-medium transition ${
+            timerMode === "focus"
+              ? "bg-white text-stone-950"
+              : "border border-white/15 text-stone-200"
+          }`}
+        >
+          Focus mode
+        </button>
+        <button
+          type="button"
+          onClick={() => handleModeChange("break")}
+          className={`rounded-full px-4 py-3 text-sm font-medium transition ${
+            timerMode === "break"
+              ? "bg-sky-400 text-stone-950"
+              : "border border-white/15 text-stone-200"
+          }`}
+        >
+          Break mode
+        </button>
+      </div>
       <div className="flex flex-wrap justify-center gap-2">
-        {TIMER_PRESETS.map((preset) => (
+        {(timerMode === "focus" ? TIMER_PRESETS : BREAK_PRESETS).map((preset) => (
           <button
             key={preset}
             type="button"
@@ -223,7 +330,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
           <button
             type="button"
             onClick={() => {
-              if (isRunning || isSaving) {
+              if (isRunning || isSaving || timerMode !== "focus") {
                 return;
               }
 
@@ -253,6 +360,23 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
         </button>
         <button
           type="button"
+          onClick={() => {
+            if (isRunning || isSaving) {
+              return;
+            }
+
+            setAutoBreakEnabled((current) => !current);
+          }}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            autoBreakEnabled
+              ? "border border-violet-400/30 bg-violet-500/10 text-violet-300"
+              : "border border-white/15 text-stone-300"
+          }`}
+        >
+          {autoBreakEnabled ? "Auto break on" : "Auto break off"}
+        </button>
+        <button
+          type="button"
           onClick={handleDebugModeToggle}
           className={`rounded-full px-4 py-2 text-sm font-medium transition ${
             debugModeEnabled
@@ -266,7 +390,7 @@ export function PomodoroTimer({ userId }: PomodoroTimerProps) {
 
       <div className="mt-8 text-center">
         <p className="text-sm uppercase tracking-[0.3em] text-orange-300">
-          Current timer
+          {timerMode === "focus" ? "Current focus" : "Current break"}
         </p>
         <p className="mt-4 text-7xl font-semibold tabular-nums">
           {formatTime(secondsLeft)}
